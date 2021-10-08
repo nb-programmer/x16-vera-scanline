@@ -1,30 +1,31 @@
 #include <stdio.h>
 #include <cx16.h>
 
-//Function declaration for the assembly routine
-extern void helloasm();
+extern void initirq();
+extern void restoreirq();
+extern void initvera();
 
 int main() {
-    int num, correct_inputs;
+    int i;
+    char inp;
 
-    /* Testing input and output */
-    printf("Hello! Enter a number: ");
+    //Initialize our custom interrupt handler
+    initirq();
 
-    //scanf returns how many inputs were correctly entered
-    correct_inputs = scanf("%d", &num);
+    //Setup VERA registers
+    initvera();
 
-    if (correct_inputs == 1) {
-        printf("You have entered: %d\n", num);
-    } else {
-        printf("\nThat doesn't look like a number to me\n");
-    }
+    printf("***** Enter q to exit *****\n");
 
-    /* Calling assembly routines from C */
-    printf("Calling an assembly routine...\n");
+    //Fill the screen with some text to see the effect
+    for (i=0;i<0x400;i++) printf("ABCD");
 
-    //Functions are prefixed with one underscore when compiled.
-    //In the assembly, this routine will be called "_helloasm"
-    helloasm();
+    //Wait for quit command
+    while (scanf("%c", &inp))
+        if (inp == 'q')
+            break;
+
+    restoreirq();
 
     return 0;
 }
