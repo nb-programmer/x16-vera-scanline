@@ -12,6 +12,7 @@ irq_default:        .res 2      ;Default isr (Kernal handler)
 row_size:           .res 1      ;What scale to set the screen at the split section
 wave_idx:           .res 1      ;Index of the 'wavetable'
 line_irq_cnt:       .res 1      ;To indicate what part of the split we are at
+irq_skip_default:   .res 1      ;Whether the default interrupt handler is to be skipped
 
 ;Constants
 SPLIT_1         = $80
@@ -86,6 +87,7 @@ SCALE_DEFAULT   = $80
 
 ;Custom interrupt handler
 .proc irq_handler
+    stz irq_skip_default
     ;Check what type of interrupt
     lda VERA::IRQ_FLAGS
 @check_vsync:
@@ -118,6 +120,7 @@ SCALE_DEFAULT   = $80
     lda VERA::IRQ_FLAGS
     and #VERA::RASTER_IRQ
     beq @irq_end
+    inc irq_skip_default
 
     ;[Line irq]
     ;Reset the interrupt flag
@@ -145,7 +148,15 @@ SCALE_DEFAULT   = $80
     lda #SCALE_DEFAULT
     sta VERA::DISP::HSCALE
 @irq_end:
+    lda irq_skip_default
+    bne @normal_irq_exit
     jmp (irq_default)
+@normal_irq_exit:
+    ;Restore CPU registered pushed by the BIOS ISR
+    ply
+    plx
+    pla
+    rti
 .endproc
 
 
